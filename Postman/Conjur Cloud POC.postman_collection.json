@@ -1,0 +1,4068 @@
+{
+	"info": {
+		"_postman_id": "3dd84c07-7b3a-4ed8-857d-5e906e112b63",
+		"name": "Conjur Cloud POC",
+		"description": "This collection creates the testing items for a Conjur Cloud POC.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17431960"
+	},
+	"item": [
+		{
+			"name": "1. Retrieve Tenant Information",
+			"item": [
+				{
+					"name": "Get Tenant Information",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"",
+									"postman.setEnvironmentVariable(\"conjurCloudAPIURL\", jsonData['secrets_manager']['api']);",
+									"postman.setEnvironmentVariable(\"identityTenantURL\", jsonData['identity_administration']['api']);",
+									"postman.setEnvironmentVariable(\"pasBaseURL\", jsonData['pcloud']['api']);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://platform-discovery.cyberark.cloud/api/v2/services/subdomain/{{tenantSubDomain}}",
+							"protocol": "https",
+							"host": [
+								"platform-discovery",
+								"cyberark",
+								"cloud"
+							],
+							"path": [
+								"api",
+								"v2",
+								"services",
+								"subdomain",
+								"{{tenantSubDomain}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Privilege Cloud",
+			"item": [
+				{
+					"name": "1. Users",
+					"item": [
+						{
+							"name": "1. Get Conjur Sync User",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const jsonData = pm.response.json()",
+											"",
+											"pm.environment.set(\"conjurCloudSyncUserID\", jsonData.Users[0].id);",
+											"pm.environment.set(\"conjurCloudSyncUserName\", jsonData.Users[0].username);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer  {{identityToken}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{pasBaseURL}}/PasswordVault/API/users?search=conjur",
+									"host": [
+										"{{pasBaseURL}}"
+									],
+									"path": [
+										"PasswordVault",
+										"API",
+										"users"
+									],
+									"query": [
+										{
+											"key": "search",
+											"value": "conjur"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "2. Safe",
+					"item": [
+						{
+							"name": "Optional",
+							"item": [
+								{
+									"name": "Delete Test Safe",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer  {{identityToken}}",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"numberOfVersionsRetention\": 7,\n  \"autoPurgeEnabled\": true,\n  \"safeName\": \"ConjurCloudTestSafe\",\n  \"description\": \"This safe's contents will get replicated over to Conjur Cloud.\"\n}"
+										},
+										"url": {
+											"raw": "{{pasBaseURL}}/PasswordVault/API/Safes/{{conjurCloudTestSafeName}}",
+											"host": [
+												"{{pasBaseURL}}"
+											],
+											"path": [
+												"PasswordVault",
+												"API",
+												"Safes",
+												"{{conjurCloudTestSafeName}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "1. Create Test Safe",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const jsonData = pm.response.json()",
+											"",
+											"pm.environment.set(\"conjurCloudTestSafeID\", jsonData.safeNumber);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer  {{identityToken}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"numberOfVersionsRetention\": 7,\n    \"autoPurgeEnabled\": true,\n    \"safeName\": \"{{conjurCloudTestSafeName}}\",\n    \"description\": \"This safe's contents will get replicated over to Conjur Cloud.\"\n}"
+								},
+								"url": {
+									"raw": "{{pasBaseURL}}/PasswordVault/API/Safes/",
+									"host": [
+										"{{pasBaseURL}}"
+									],
+									"path": [
+										"PasswordVault",
+										"API",
+										"Safes",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2. Add Conjur Sync User Safe Membership",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const jsonData = pm.response.json()",
+											"",
+											"pm.environment.set(\"conjurCloudTestSafeID\", jsonData.safeNumber);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer  {{identityToken}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"memberName\": \"{{conjurCloudSyncUserName}}\",\n    \"searchIn\": \"Vault\",\n    \"permissions\": {\n        \"useAccounts\": true,\n        \"retrieveAccounts\": true,\n        \"listAccounts\": true,\n        \"addAccounts\": false,\n        \"updateAccountContent\": false,\n        \"updateAccountProperties\": false,\n        \"initiateCPMAccountManagementOperations\": false,\n        \"specifyNextAccountContent\": false,\n        \"renameAccounts\": false,\n        \"deleteAccounts\": false,\n        \"unlockAccounts\": false,\n        \"manageSafe\": false,\n        \"manageSafeMembers\": false,\n        \"backupSafe\": false,\n        \"viewAuditLog\": false,\n        \"viewSafeMembers\": true,\n        \"accessWithoutConfirmation\": true,\n        \"createFolders\": false,\n        \"deleteFolders\": false,\n        \"moveAccountsAndFolders\": false,\n        \"requestsAuthorizationLevel1\": false,\n        \"requestsAuthorizationLevel2\": false\n    },\n    \"MemberType\": \"Group\"\n}"
+								},
+								"url": {
+									"raw": "{{pasBaseURL}}/PasswordVault/API/Safes/{{conjurCloudTestSafeName}}/Members/",
+									"host": [
+										"{{pasBaseURL}}"
+									],
+									"path": [
+										"PasswordVault",
+										"API",
+										"Safes",
+										"{{conjurCloudTestSafeName}}",
+										"Members",
+										""
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "3. Accounts",
+					"item": [
+						{
+							"name": "Optional",
+							"item": [
+								{
+									"name": "Delete Test Account",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer  {{identityToken}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{pasBaseURL}}/PasswordVault/API/Accounts/{{conjurCloudTestAccountID}}",
+											"host": [
+												"{{pasBaseURL}}"
+											],
+											"path": [
+												"PasswordVault",
+												"API",
+												"Accounts",
+												"{{conjurCloudTestAccountID}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "1. Create Test Account",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const jsonData = pm.response.json()",
+											"",
+											"pm.environment.set(\"conjurCloudTestAccountID\", jsonData.id);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer  {{identityToken}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"{{conjurCloudTestAccountName}}\",\n    \"address\": \"{{conjurCloudTestAccountAddress}}\",\n    \"userName\": \"{{conjurCloudTestAccountUserName}}\",\n    \"platformId\": \"{{conjurCloudTestAccountPlatformID}}\",\n    \"safeName\": \"{{conjurCloudTestSafeName}}\",\n    \"secretType\": \"password\",\n    \"secret\": \"{{conjurCloudTestAccountPassword}}\",\n    \"platformAccountProperties\": {},\n    \"secretManagement\": {\n        \"automaticManagementEnabled\": false,\n        \"manualManagementReason\": \"Account for Testing\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{pasBaseURL}}/PasswordVault/API/Accounts/",
+									"host": [
+										"{{pasBaseURL}}"
+									],
+									"path": [
+										"PasswordVault",
+										"API",
+										"Accounts",
+										""
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "3. Conjur Cloud",
+			"item": [
+				{
+					"name": "1. Conjur Policy",
+					"item": [
+						{
+							"name": "1. conjur",
+							"item": [
+								{
+									"name": "1. aws",
+									"item": [
+										{
+											"name": "1. authn-aws",
+											"event": [
+												{
+													"listen": "prerequest",
+													"script": {
+														"exec": [
+															""
+														],
+														"type": "text/javascript"
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "PUT",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "#Load policy into conjur/authn-iam\n---\n- !policy\n  id: region1\n  body:\n  - !webservice\n\n  - !group consumers\n\n  - !permit\n    role: !group consumers\n    privilege: [ read, authenticate ]\n    resource: !webservice\n\n  - !webservice\n    id: status\n    annotations:\n      description: Status service to check that the authenticator is configured correctly\n\n  - !group\n    id: operators\n    annotations:\n      description: Group of users who can check the status of the authenticator\n\n  - !permit\n     role: !group operators\n     privilege: [ read ]\n     resource: !webservice status"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/conjur/authn-iam",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"policies",
+														"{{conjurCloudAccount}}",
+														"policy",
+														"conjur",
+														"authn-iam"
+													]
+												},
+												"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+											},
+											"response": []
+										},
+										{
+											"name": "2. Enable Authenticator",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "PATCH",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "urlencoded",
+													"urlencoded": [
+														{
+															"key": "enabled",
+															"value": "true",
+															"type": "text"
+														}
+													]
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/authn-iam/region1/conjur",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"authn-iam",
+														"region1",
+														"conjur"
+													]
+												},
+												"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "2. azure",
+									"item": [
+										{
+											"name": "1. authn-azure",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "#Load policy into conjur/authn-azure\n---\n- !policy\n  id: region1\n  body:\n  - !webservice\n\n  - !variable\n    id: provider-uri\n\n  - !group\n    id: consumers\n    annotations:\n      description: Group of hosts that can authenticate using the authn-azure/<service-id> authenticator\n\n  - !permit\n    role: !group consumers\n    privilege: [ read, authenticate ]\n    resource: !webservice\n\n  - !webservice\n    id: status\n    annotations:\n      description: Status service to check that the authenticator is configured correctly\n\n  - !group\n    id: operators\n    annotations:\n      description: Group of users who can check the status of the authenticator\n\n  - !permit\n     role: !group operators\n     privilege: [ read ]\n     resource: !webservice status"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/conjur/authn-azure",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"policies",
+														"{{conjurCloudAccount}}",
+														"policy",
+														"conjur",
+														"authn-azure"
+													]
+												},
+												"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+											},
+											"response": []
+										},
+										{
+											"name": "2. Enable Authenticator",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "PATCH",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "urlencoded",
+													"urlencoded": [
+														{
+															"key": "enabled",
+															"value": "true",
+															"type": "text"
+														}
+													]
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/authn-azure/region1/conjur",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"authn-azure",
+														"region1",
+														"conjur"
+													]
+												},
+												"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "3. gcp",
+									"item": [
+										{
+											"name": "1. authn-gcp",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "#Load policy into conjur/authn-gcp\n---\n- !policy\n  id: region1\n  body:\n  - !webservice\n\n  - !group \n    id: consumers\n    annotations:\n      description: Group of hosts that can authenticate using the authn-gcp authenticator\n\n  - !permit\n    role: !group consumers\n    privilege: [ read, authenticate ]\n    resource: !webservice\n\n  - !webservice\n    id: status\n    annotations:\n      description: Status service to check that the authenticator is configured correctly\n\n  - !group\n    id: operators\n    annotations:\n      description: Group of users who can check the status of the authenticator\n\n  - !permit\n     role: !group operators\n     privilege: [ read ]\n     resource: !webservice status"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/conjur/authn-gcp",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"policies",
+														"{{conjurCloudAccount}}",
+														"policy",
+														"conjur",
+														"authn-gcp"
+													]
+												},
+												"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+											},
+											"response": []
+										},
+										{
+											"name": "2 Enable Authenticator",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "PATCH",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "urlencoded",
+													"urlencoded": [
+														{
+															"key": "enabled",
+															"value": "true",
+															"type": "text"
+														}
+													]
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/authn-gcp/region1/conjur",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"authn-gcp",
+														"region1",
+														"conjur"
+													]
+												},
+												"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "4. authn-jwt",
+									"item": [
+										{
+											"name": "1. gitlab",
+											"item": [
+												{
+													"name": "1. authn-jwt-gitlab",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "#Load policy into conjur/authn-jwt\n# This policy defines a JWT authenticator to be used with an instance of Gitlab\n---\n- !policy\n  id: gitlab1\n  body:\n  - !webservice\n\n  # If the JWKS service is publicly available, uncomment 'jwks-uri'.\n  # If the JWKS service is not available, uncomment 'public-keys'\n\n  - !variable\n    id: jwks-uri\n\n  # - !variable\n  #   id: public-keys\n\n  # This variable tells Conjur which claim in the JWT to use to determine the conjur host identity.\n  - !variable\n    id: token-app-property\n\n  # This variable is used with token-app-property. This variable will hold the conjur policy path that contains the conjur host identity found by looking at the claim entered in token-app-property.\n  - !variable\n    id: identity-path\n\n  # Uncomment ca-cert if the JWKS website cert isn't trusted by conjur\n\n  # - !variable\n  #   id: ca-cert\n\n  # This variable contains what \"iss\" in the JWT.\n  - !variable\n    id: issuer\n  \n  # This variable contains what \"aud\" is the JWT.\n  - !variable\n    id: audience\n\n  # - !variable\n  #   id: enforced-claims\n\n  # - !variable\n  #   id: claim-aliases\n\n  - !group\n    id: consumers\n\n  - !permit\n    role: !group consumers\n    privilege: [ read, authenticate ]\n    resource: !webservice\n\n  - !webservice\n    id: status\n    annotations:\n      description: Status service to check that the authenticator is configured correctly\n\n  - !group\n    id: operators\n    annotations:\n      description: Group of users who can check the status of the authenticator\n\n  - !permit\n     role: !group operators\n     privilege: [ read ]\n     resource: !webservice status"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/conjur/authn-jwt",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"conjur",
+																"authn-jwt"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "1. Enable Authenticator",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "PATCH",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "urlencoded",
+															"urlencoded": [
+																{
+																	"key": "enabled",
+																	"value": "true",
+																	"type": "text"
+																}
+															]
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/authn-jwt/gitlab1/conjur",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"authn-jwt",
+																"gitlab1",
+																"conjur"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												}
+											]
+										},
+										{
+											"name": "2. jenkins",
+											"item": [
+												{
+													"name": "1. authn-jwt-jenkins",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "#Load policy into conjur/authn-jwt\n# This policy defines a JWT authenticator to be used with an instance of Jenkins\n---\n- !policy\n  id: jenkins1\n  body:\n  - !webservice\n\n  # If the JWKS service is publicly available, uncomment 'jwks-uri'.\n  # If the JWKS service is not available, uncomment 'public-keys'\n\n  - !variable\n    id: jwks-uri\n\n  # - !variable\n  #   id: public-keys\n\n  # This variable tells Conjur which claim in the JWT to use to determine the conjur host identity.\n  - !variable\n    id: token-app-property\n\n  # This variable is used with token-app-property. This variable will hold the conjur policy path that contains the conjur host identity found by looking at the claim entered in token-app-property.\n  - !variable\n    id: identity-path\n\n  # Uncomment ca-cert if the JWKS website cert isn't trusted by conjur\n\n  # - !variable\n  #   id: ca-cert\n\n  # This variable contains what \"iss\" in the JWT.\n  - !variable\n    id: issuer\n  \n  # This variable contains what \"aud\" is the JWT.\n  - !variable\n    id: audience\n\n  # - !variable\n  #   id: enforced-claims\n\n  # - !variable\n  #   id: claim-aliases\n\n  - !group\n    id: consumers\n\n  - !permit\n    role: !group consumers\n    privilege: [ read, authenticate ]\n    resource: !webservice\n\n  - !webservice\n    id: status\n    annotations:\n      description: Status service to check that the authenticator is configured correctly\n\n  - !group\n    id: operators\n    annotations:\n      description: Group of users who can check the status of the authenticator\n\n  - !permit\n     role: !group operators\n     privilege: [ read ]\n     resource: !webservice status"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/conjur/authn-jwt",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"conjur",
+																"authn-jwt"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "2. Enable Authenticator",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "PATCH",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "urlencoded",
+															"urlencoded": [
+																{
+																	"key": "enabled",
+																	"value": "true",
+																	"type": "text"
+																}
+															]
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/authn-jwt/jenkins1/conjur",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"authn-jwt",
+																"jenkins1",
+																"conjur"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												}
+											]
+										},
+										{
+											"name": "3. kubernetes",
+											"item": [
+												{
+													"name": "1. authn-jwt-kubernetes",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "#Load policy into conjur/authn-jwt\n# This policy defines a JWT authenticator to be used with an instance of Jenkins\n- !policy\n  id: k8s-cluster1\n  body:\n  - !webservice\n\n  # Uncomment one of following variables depending on the public availability\n  # of the Service Account Issuer Discovery service in Kubernetes \n  # If the service is publicly available, uncomment 'jwks-uri'.\n  # If the service is not available, uncomment 'public-keys'\n\n  # - !variable\n  #   id: jwks-uri\n\n  - !variable\n    id: public-keys\n\n  # This variable tells Conjur which claim in the JWT to use to determine the conjur host identity.\n  - !variable\n    id: token-app-property\n\n  # This variable is used with token-app-property. This variable will hold the conjur policy path that contains the conjur host identity found by looking at the claim entered in token-app-property.\n  - !variable\n    id: identity-path\n\n  # Uncomment ca-cert if the JWKS website cert isn't trusted by conjur\n\n  # - !variable\n  #   id: ca-cert\n\n  # This variable contains what \"iss\" in the JWT.\n  - !variable\n    id: issuer\n  \n  # This variable contains what \"aud\" is the JWT.\n  # - !variable\n  #   id: audience\n\n  # - !variable\n  #   id: enforced-claims\n\n  # - !variable\n  #   id: claim-aliases\n\n  - !group\n    id: consumers\n\n  - !permit\n    role: !group consumers\n    privilege: [ read, authenticate ]\n    resource: !webservice\n\n  - !webservice\n    id: status\n    annotations:\n      description: Status service to check that the authenticator is configured correctly\n\n  - !group\n    id: operators\n    annotations:\n      description: Group of users who can check the status of the authenticator\n\n  - !permit\n     role: !group operators\n     privilege: [ read ]\n     resource: !webservice status"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/conjur/authn-jwt",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"conjur",
+																"authn-jwt"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "2. Enable Authenticator",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "PATCH",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "urlencoded",
+															"urlencoded": [
+																{
+																	"key": "enabled",
+																	"value": "true",
+																	"type": "text"
+																}
+															]
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/authn-jwt/k8s-cluster1/conjur",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"authn-jwt",
+																"k8s-cluster1",
+																"conjur"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												}
+											]
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "2. data",
+							"item": [
+								{
+									"name": "1. secrets",
+									"item": [
+										{
+											"name": "1-secrets",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "#Load policy into data branch\n- !group\n  id: example-vault1-admins\n\n- !policy\n  id: example-vault1\n  owner: !group example-vault1-admins\n  body:\n  - !group \n    id: example-safe1-admins\n  \n  - !policy\n    id: example-safe1\n    owner: !group example-safe1-admins\n    body:\n    - &safe1-secrets\n      - !variable\n        id: secret1/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe1/secret1\n          mime_type: application/json\n\n      - !variable\n        id: secret1/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe1/secret1\n          mime_type: application/json\n\n      - !variable\n        id: secret2/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe1/secret2\n          mime_type: application/json\n\n      - !variable\n        id: secret2/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe1/secret2\n          mime_type: application/json\n\n      - !variable\n        id: secret3/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe1/secret3\n          mime_type: application/json\n\n      - !variable\n        id: secret3/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe1/secret3\n          mime_type: application/json\n\n      - !variable\n        id: secret4/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe1/secret4\n          mime_type: application/json\n\n      - !variable\n        id: secret4/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe1/secret4\n          mime_type: application/json\n\n    - !policy\n      id: delegation\n      body:\n      - !group\n        id: consumers\n      \n    - !permit\n      role: !group delegation/consumers\n      privilege: [ read, execute ]\n      resource: *safe1-secrets\n\n  - !group \n    id: example-safe2-admins\n  \n  - !policy\n    id: example-safe2\n    owner: !group example-safe2-admins\n    body:\n    - &safe2-secrets\n      - !variable\n        id: secret1/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe2/secret1\n          mime_type: application/json\n\n      - !variable\n        id: secret1/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe2/secret1\n          mime_type: application/json\n\n      - !variable\n        id: secret2/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe2/secret2\n          mime_type: application/json\n\n      - !variable\n        id: secret2/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe2/secret2\n          mime_type: application/json\n\n      - !variable\n        id: secret3/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe2/secret3\n          mime_type: application/json\n\n      - !variable\n        id: secret3/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe2/secret3\n          mime_type: application/json\n\n      - !variable\n        id: secret4/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe2/secret4\n          mime_type: application/json\n\n      - !variable\n        id: secret4/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe2/secret4\n          mime_type: application/json\n\n    - !policy\n      id: delegation\n      body:\n      - !group\n        id: consumers\n      \n    - !permit\n      role: !group delegation/consumers\n      privilege: [ read, execute ]\n      resource: *safe2-secrets\n\n  - !group \n    id: example-safe3-admins\n  \n  - !policy\n    id: example-safe3\n    owner: !group example-safe3-admins\n    body:\n    - &safe3-secrets\n      - !variable\n        id: secret1/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe3/secret1\n          mime_type: application/json\n\n      - !variable\n        id: secret1/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe3/secret1\n          mime_type: application/json\n\n      - !variable\n        id: secret2/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe3/secret2\n          mime_type: application/json\n\n      - !variable\n        id: secret2/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe3/secret2\n          mime_type: application/json\n\n      - !variable\n        id: secret3/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe3/secret3\n          mime_type: application/json\n\n      - !variable\n        id: secret3/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe3/secret3\n          mime_type: application/json\n\n      - !variable\n        id: secret4/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe3/secret4\n          mime_type: application/json\n\n      - !variable\n        id: secret4/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe3/secret4\n          mime_type: application/json\n\n    - !policy\n      id: delegation\n      body:\n      - !group\n        id: consumers\n      \n    - !permit\n      role: !group delegation/consumers\n      privilege: [ read, execute ]\n      resource: *safe3-secrets\n\n  - !group \n    id: example-safe4-admins\n  \n  - !policy\n    id: example-safe4\n    owner: !group example-safe4-admins\n    body:\n    - &safe4-secrets\n      - !variable\n        id: secret1/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe4/secret1\n          mime_type: application/json\n\n      - !variable\n        id: secret1/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe4/secret1\n          mime_type: application/json\n          \n      - !variable\n        id: secret2/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe4/secret2\n          mime_type: application/json\n\n      - !variable\n        id: secret2/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe4/secret2\n          mime_type: application/json\n\n      - !variable\n        id: secret3/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe4/secret3\n          mime_type: application/json\n\n      - !variable\n        id: secret3/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe4/secret3\n          mime_type: application/json\n\n      - !variable\n        id: secret4/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe4/secret4\n          mime_type: application/json\n\n      - !variable\n        id: secret4/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe4/secret4\n          mime_type: application/json\n\n    - !policy\n      id: delegation\n      body:\n      - !group\n        id: consumers\n      \n    - !permit\n      role: !group delegation/consumers\n      privilege: [ read, execute ]\n      resource: *safe4-secrets\n\n  - !group \n    id: example-safe5-admins\n  \n  - !policy\n    id: example-safe5\n    owner: !group example-safe5-admins\n    body:\n    - &safe5-secrets\n      - !variable\n        id: secret1/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe5/secret1\n          mime_type: application/json\n\n      - !variable\n        id: secret1/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe5/secret1\n          mime_type: application/json\n\n      - !variable\n        id: secret2/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe5/secret2\n          mime_type: application/json\n\n      - !variable\n        id: secret2/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe5/secret2\n          mime_type: application/json\n\n      - !variable\n        id: secret3/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe5/secret3\n          mime_type: application/json\n\n      - !variable\n        id: secret3/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe5/secret3\n          mime_type: application/json\n\n      - !variable\n        id: secret4/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe5/secret4\n          mime_type: application/json\n\n      - !variable\n        id: secret4/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe5/secret4\n          mime_type: application/json\n\n    - !policy\n      id: delegation\n      body:\n      - !group\n        id: consumers\n    \n    - !permit\n      role: !group delegation/consumers\n      privilege: [ read, execute ]\n      resource: *safe5-secrets\n\n  - !group \n    id: example-safe6-admins\n  \n  - !policy\n    id: example-safe6\n    owner: !group example-safe6-admins\n    body:\n    - &safe6-secrets\n      - !variable\n        id: secret1/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe6/secret1\n          mime_type: application/json\n\n      - !variable\n        id: secret1/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe6/secret1\n          mime_type: application/json\n\n      - !variable\n        id: secret2/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe6/secret2\n          mime_type: application/json\n\n      - !variable\n        id: secret2/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe6/secret2\n          mime_type: application/json\n\n      - !variable\n        id: secret3/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe6/secret3\n          mime_type: application/json\n\n      - !variable\n        id: secret3/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe6/secret3\n          mime_type: application/json\n\n      - !variable\n        id: secret4/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe6/secret4\n          mime_type: application/json\n\n      - !variable\n        id: secret4/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe6/secret4\n          mime_type: application/json\n\n    - !policy\n      id: delegation\n      body:\n      - !group\n        id: consumers\n      \n    - !permit\n      role: !group delegation/consumers\n      privilege: [ read, execute ]\n      resource: *safe6-secrets\n\n  - !group \n    id: example-safe7-admins\n  \n  - !policy\n    id: example-safe7\n    owner: !group example-safe7-admins\n    body:\n    - &safe7-secrets\n      - !variable\n        id: secret1/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe7/secret1\n          mime_type: application/json\n\n      - !variable\n        id: secret1/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe7/secret1\n          mime_type: application/json\n\n      - !variable\n        id: secret2/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe7/secret2\n          mime_type: application/json\n\n      - !variable\n        id: secret2/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe7/secret2\n          mime_type: application/json\n          \n      - !variable\n        id: secret3/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe7/secret3\n          mime_type: application/json\n\n      - !variable\n        id: secret3/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe7/secret3\n          mime_type: application/json\n\n      - !variable\n        id: secret4/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe7/secret4\n          mime_type: application/json\n\n      - !variable\n        id: secret4/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe7/secret4\n          mime_type: application/json\n          \n    - !policy\n      id: delegation\n      body:\n      - !group\n        id: consumers\n      \n    - !permit\n      role: !group delegation/consumers\n      privilege: [ read, execute ]\n      resource: *safe7-secrets\n\n  - !group \n    id: example-safe8-admins\n  \n  - !policy\n    id: example-safe8\n    owner: !group example-safe8-admins\n    body:\n    - &safe8-secrets\n      - !variable\n        id: secret1/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe8/secret1\n          mime_type: application/json\n\n      - !variable\n        id: secret1/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe8/secret1\n          mime_type: application/json\n\n      - !variable\n        id: secret2/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe8/secret2\n          mime_type: application/json\n\n      - !variable\n        id: secret2/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe8/secret2\n          mime_type: application/json\n\n      - !variable\n        id: secret3/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe8/secret3\n          mime_type: application/json\n\n      - !variable\n        id: secret3/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe8/secret3\n          mime_type: application/json\n\n      - !variable\n        id: secret4/username\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe8/secret4\n          mime_type: application/json\n\n      - !variable\n        id: secret4/password\n        annotations:\n          cyberark-vault: 'true'\n          cyberark-vault/accounts: example-vault1/example-safe8/secret4\n          mime_type: application/json\n\n    - !policy\n      id: delegation\n      body:\n      - !group\n        id: consumers\n      \n    - !permit\n      role: !group delegation/consumers\n      privilege: [ read, execute ]\n      resource: *safe8-secrets"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"policies",
+														"{{conjurCloudAccount}}",
+														"policy",
+														"{{conjurCloudPolicyToExtend}}"
+													]
+												},
+												"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "2. cd",
+									"item": [
+										{
+											"name": "1. kubernetes",
+											"item": [
+												{
+													"name": "Optional",
+													"item": [
+														{
+															"name": "k8s-delete-public-keys",
+															"request": {
+																"auth": {
+																	"type": "noauth"
+																},
+																"method": "PATCH",
+																"header": [
+																	{
+																		"key": "Authorization",
+																		"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																		"type": "text"
+																	}
+																],
+																"body": {
+																	"mode": "raw",
+																	"raw": "- !delete\n  record: !variable authn-jwt/k8s-cluster1/public-keys"
+																},
+																"url": {
+																	"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/conjur",
+																	"host": [
+																		"{{conjurCloudAPIURL}}"
+																	],
+																	"path": [
+																		"policies",
+																		"{{conjurCloudAccount}}",
+																		"policy",
+																		"conjur"
+																	]
+																},
+																"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+															},
+															"response": []
+														},
+														{
+															"name": "k8s-delete-jwks-uri",
+															"request": {
+																"auth": {
+																	"type": "noauth"
+																},
+																"method": "PATCH",
+																"header": [
+																	{
+																		"key": "Authorization",
+																		"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																		"type": "text"
+																	}
+																],
+																"body": {
+																	"mode": "raw",
+																	"raw": "- !delete\n  record: !variable authn-jwt/k8s-cluster1/jwks-uri\n\n- !delete\n  record: !variable authn-jwt/k8s-cluster1/ca-certs"
+																},
+																"url": {
+																	"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/conjur",
+																	"host": [
+																		"{{conjurCloudAPIURL}}"
+																	],
+																	"path": [
+																		"policies",
+																		"{{conjurCloudAccount}}",
+																		"policy",
+																		"conjur"
+																	]
+																},
+																"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+															},
+															"response": []
+														}
+													]
+												},
+												{
+													"name": "1-k8s-follower-auto-configuration",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load policy into data branch\n#\n# Example Payload of JWT for a mounted service account token\n# {\n#   \"aud\": [\n#     \"https://kubernetes.default.svc.cluster.local\"\n#   ],\n#   \"exp\": 1680268878,\n#   \"iat\": 1648732878,\n#   \"iss\": \"https://kubernetes.default.svc.cluster.local\",\n#   \"kubernetes.io\": {\n#     \"namespace\": \"conjur\",\n#     \"pod\": {\n#       \"name\": \"k8s-jwt-app1-6679d7b48-sk8br\",\n#       \"uid\": \"77495a36-9fa7-422a-8422-f2ed73916c8b\"\n#     },\n#     \"serviceaccount\": {\n#       \"name\": \"jwt-app-account\",\n#       \"uid\": \"f5dcf3f4-e8b5-4d83-a631-499d1f97324b\"\n#     },\n#     \"warnafter\": 1648736485\n#   },\n#   \"nbf\": 1648732878,\n#   \"sub\": \"system:serviceaccount:conjur:jwt-app-account\"\n# }\n\n- !policy\n  id: cd/kubernetes/k8s-follower-auto-configuration/jwt-authn-k8s-cluster1\n  body:\n  - !group\n\n  - &follower-service-accounts-jwt\n    - !host\n      id: system:serviceaccount:conjur:conjur-cluster\n      annotations:\n        authn-jwt/k8s-cluster1/kubernetes.io/namespace: conjur\n        authn-jwt/k8s-cluster1/kubernetes.io/service-account: conjur-cluster\n        authn/api-key: true\n  \n  - !grant \n    role: !group\n    members: *follower-service-accounts-jwt\n\n"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "2-k8s-dev-team-3-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "---\n- !policy\n  id: cd/kubernetes/dev-team-3/applications\n  body:\n  - &dev_team_3_jwt_apps\n    - !host\n      id: system:serviceaccount:conjur:jwt-app-account\n      annotations:\n        authn-jwt/k8s-cluster1/kubernetes.io/namespace: conjur\n        authn-jwt/k8s-cluster1/kubernetes.io/serviceaccount/name: jwt-app-account\n        authn/api-key: true\n  \n  - !group\n    id: jwt-apps\n\n  - !grant\n    roles:\n      - !group jwt-apps\n    members: *dev_team_3_jwt_apps\n\n# Example Payload of JWT for a mounted service account token\n# {\n#   \"aud\": [\n#     \"https://kubernetes.default.svc.cluster.local\"\n#   ],\n#   \"exp\": 1680268878,\n#   \"iat\": 1648732878,\n#   \"iss\": \"https://kubernetes.default.svc.cluster.local\",\n#   \"kubernetes.io\": {\n#     \"namespace\": \"conjur\",\n#     \"pod\": {\n#       \"name\": \"k8s-jwt-app1-6679d7b48-sk8br\",\n#       \"uid\": \"77495a36-9fa7-422a-8422-f2ed73916c8b\"\n#     },\n#     \"serviceaccount\": {\n#       \"name\": \"jwt-app-account\",\n#       \"uid\": \"f5dcf3f4-e8b5-4d83-a631-499d1f97324b\"\n#     },\n#     \"warnafter\": 1648736485\n#   },\n#   \"nbf\": 1648732878,\n#   \"sub\": \"system:serviceaccount:conjur:jwt-app-account\"\n# }\n\n# Example Payload of JWT for an unmounted service account token\n# {\n#   \"iss\": \"kubernetes/serviceaccount\",\n#   \"kubernetes.io/serviceaccount/namespace\": \"conjur\",\n#   \"kubernetes.io/serviceaccount/secret.name\": \"conjur-cluster-token-r4qmp\",\n#   \"kubernetes.io/serviceaccount/service-account.name\": \"conjur-cluster\",\n#   \"kubernetes.io/serviceaccount/service-account.uid\": \"cb40fbdc-2b56-4057-8ab7-04c6873c6dc7\",\n#   \"sub\": \"system:serviceaccount:conjur:conjur-cluster\"\n# }"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "3-k8s-grants-jwt-authenticator",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into conjur/authn-jwt/k8s-cluster1 branch\n- !grant\n  roles:\n    - !group consumers\n  members:\n    - !group /data/cd/kubernetes/k8s-follower-auto-configuration/jwt-authn-k8s-cluster1\n    - !group /data/cd/kubernetes/dev-team-3/applications/jwt-apps"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/conjur/authn-jwt/k8s-cluster1",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"conjur",
+																"authn-jwt",
+																"k8s-cluster1"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "4-k8s-grants-jwt-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "- !grant\n  roles:\n    - !group vault/{{conjurCloudTestSafeName}}/delegation/consumers\n  members:\n    - !group cd/kubernetes/dev-team-3/applications/jwt-apps"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												}
+											]
+										},
+										{
+											"name": "2. ansible",
+											"item": [
+												{
+													"name": "1-ansible-automation-controller-team-1-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into data branch\n---\n- !policy\n  id: cd/ansible/automation-controller-team-1/controllers\n  body:\n  - &test_environment\n    - !host\n      id: boise-controller\n      annotations:\n        team: automation-controller-team-1\n        ansible: true\n        location: datacenter9\n        environment: test\n        authn/api-key: true\n\n  - !group test-controllers\n\n  - !grant\n    role: !group test-controllers\n    members: *test_environment\n      \n  - &production_environment\n    - !host\n      id: aws-controller\n      annotations:\n        team: automation-controller-team-1\n        ansible: true\n        location: aws\n        environment: prod\n        authn/api-key: true\n\n    - !host\n      id: onprem-controller\n      annotations:\n        team: automation-controller-team-1\n        ansible: true\n        location: datacenter7\n        environment: prod\n        authn/api-key: true\n  \n  - !group prod-controllers\n\n  - !grant\n    role: !group prod-controllers\n    members: *production_environment"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "2-ansible-dev-team-1-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into data branch\n---\n- !policy\n  id: cd/ansible/dev-team-1/applications\n  body:\n  - &test_environment\n    - !host\n      id: app1\n      annotations:\n        team: dev-team-1\n        ansible: true\n        location: datacenter3\n        environment: test\n        authn/api-key: true\n\n  - !group test-apps\n\n  - !grant\n    role: !group test-apps\n    members: *test_environment\n      \n  - &production_environment\n    - !host\n      id: app2\n      annotations:\n        team: dev-team-1\n        ansible: true\n        location: gcp\n        environment: prod\n        authn/api-key: true\n  \n  - !group prod-apps\n\n  - !grant\n    role: !group prod-apps\n    members: *production_environment"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "3-ansible-grants",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into the data branch\n- !grant\n  role: !group vault/{{conjurCloudTestSafeName}}/delegation/consumers\n  members:\n    - !group cd/ansible/dev-team-1/applications/test-apps\n    - !group cd/ansible/dev-team-1/applications/prod-apps\n    - !group cd/ansible/automation-controller-team-1/controllers/test-controllers\n    - !group cd/ansible/automation-controller-team-1/controllers/prod-controllers"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												}
+											]
+										},
+										{
+											"name": "3. tanzu",
+											"item": [
+												{
+													"name": "1-tanzu-service-brokers",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "---\n# this policy will be automatically populated by the service-broker once an application is bound\n- &policies\n  - !policy\n    id: cd/tanzu/service-brokers\n\n    - &service_brokers\n      - !host\n        id: conjur-service-broker-foundation1\n        annotations:\n          authn/api-key: true\n          platform: tanzu\n\n  - !group conjur-service-brokers\n\n  - !grant\n    role: !group conjur-service-brokers\n    members: *service_brokers"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "2-tanzu-dev-team-1-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "---\n# this policy will be automatically populated by the service-broker once an application is bound\n- &policies\n  - !policy\n    id: cd/tanzu/foundation1\n\n- !permit\n  role: !group /cd/tanzu/service-brokers/conjur-service-brokers\n  privileges: [ read, update, create ]\n  resources: *policies"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "3-tanzu-grants",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Grants for Tanzu apps can't be created until the service-broker populates the policies. \n\n# - !grant:\n#   role: !group vault/{{conjurCloudTestSafeName}}/delegation/consumers\n#   resources:\n#     - !host cd/tanzu/foundation1/<<org guid>>/<<space guid>>/<<app guid>>"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												}
+											]
+										},
+										{
+											"name": "4. terraform",
+											"item": [
+												{
+													"name": "1-terraform-dev-team-1-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into data branch\n---\n- !policy\n  id: cd/terraform/dev-team-1/applications\n  body:\n  - &test_environment\n    - !host\n      id: aws_test1\n      annotations:\n        team: dev-team-1\n        terraform: true\n        location: aws\n        environment: test\n        authn/api-key: true\n\n  - !group test-apps\n\n  - !grant\n    role: !group test-apps\n    members: *test_environment\n      \n  - &production_environment\n    - !host\n      id: aws_prod1\n      annotations:\n        team: dev-team-1\n        ansible: true\n        location: aws\n        environment: prod\n        authn/api-key: true\n  \n  - !group prod-apps\n\n  - !grant\n    role: !group prod-apps\n    members: *production_environment"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "2-terraform-grants-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into the data branch\n- !grant\n  role: !group vault/{{conjurCloudTestSafeName}}/delegation/consumers\n  members:\n    - !group cd/terraform/dev-team-1/applications/test-apps\n    - !group cd/terraform/dev-team-1/applications/prod-apps"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												}
+											]
+										},
+										{
+											"name": "5. octopus deploy",
+											"item": [
+												{
+													"name": "1-octopus-deploy-dev-team-1-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into data branch\n---\n- !policy\n  id: cd/octopus-deploy/dev-team-1/applications\n  body:\n  - &production_environment\n    - !host\n      id: app1\n      annotations:\n        team: dev-team-1\n        environment: prod\n        authn/api-key: true\n  \n  - !group prod-apps\n\n  - !grant\n    role: !group prod-apps\n    members: *production_environment"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "2-octopus-deploy-dev-team-1-grants-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into the data branch\n- !grant\n  role: !group vault/{{conjurCloudTestSafeName}}/delegation/consumers\n  members:\n    - !group cd/octopus-deploy/dev-team-1/applications/prod-apps"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												}
+											]
+										}
+									]
+								},
+								{
+									"name": "3. ci",
+									"item": [
+										{
+											"name": "1. azure devops",
+											"item": [
+												{
+													"name": "1-azure-devops-dev-team-1-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into data branch\n---\n- !policy\n  id: ci/azure-devops/dev-team-1/applications\n  body:\n  - &production_environment\n    - !host\n      id: app1\n      annotations:\n        team: dev-team-1\n        environment: prod\n        authn/api-key: true\n  \n  - !group prod-apps\n\n  - !grant\n    role: !group prod-apps\n    members: *production_environment"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "2-azure-devops-grants-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into the data branch\n- !grant\n  role: !group vault/{{conjurCloudTestSafeName}}/delegation/consumers\n  members:\n    - !group ci/azure-devops/dev-team-1/applications/prod-apps"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												}
+											]
+										},
+										{
+											"name": "2. gitlab",
+											"item": [
+												{
+													"name": "1-gitlab-projects",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into the data branch\n---\n- !policy\n  id: ci/gitlab/projects\n  body:\n  - &dev_team_1_job_hosts\n    - !host\n      id: Dev-Team-1/Job1\n      annotations:\n        authn/api-key: true\n        authn-jwt/gitlab1/namespace_path: Dev-Team-1\n\n  - !group\n    id: dev-team-1-jobs\n\n  - !grant\n    role: !group dev-team-1-jobs\n    members: *dev_team_1_job_hosts\n    \n \n  - &dev_team_2_job_hosts\n    - !host\n      id: Dev-Team-2/Job2\n      annotations:\n        authn/api-key: true\n        authn-jwt/gitlab1/namespace_path: Dev-Team-2\n\n  - !group\n    id: dev-team-2-jobs\n\n  - !grant\n    role: !group dev-team-2-jobs\n    members: *dev_team_2_job_hosts"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "2-gitlab-grants-authenticator",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into conjur/authn-jwt/gitlab1 branch\n- !grant\n  role: !group consumers\n  members: \n    - !group /data/ci/gitlab/projects/dev-team-1-jobs\n    - !group /data/ci/gitlab/projects/dev-team-2-jobs"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/conjur/authn-jwt/gitlab1",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"conjur",
+																"authn-jwt",
+																"gitlab1"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "3-gitlab-grants-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into data branch\n- !grant\n  role: !group vault/{{conjurCloudTestSafeName}}/delegation/consumers\n  members:\n    - !group ci/gitlab/projects/dev-team-1-jobs\n    - !group ci/gitlab/projects/dev-team-2-jobs"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												}
+											]
+										},
+										{
+											"name": "3. jenkins",
+											"item": [
+												{
+													"name": "1-jenkins-projects",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into data branch\n---\n- !policy\n  id: ci/jenkins/projects\n  body:\n  - &dev_team_1_job_hosts\n    - !host\n      id: Dev-Team-1/Job1\n      annotations:\n        authn/api-key: true\n        authn-jwt/jenkins1/jenkins_task_noun: Build\n        authn-jwt/jenkins1/jenkins_parent_full_name: Dev-Team-1\n\n    - !host\n      id: Dev-Team-1/Job2\n      annotations:\n        authn/api-key: true\n        authn-jwt/jenkins1/jenkins_task_noun: Build\n        authn-jwt/jenkins1/jenkins_parent_full_name: Dev-Team-1\n\n  - !group\n    id: dev-team-1-jobs\n\n  - !grant\n    role: !group dev-team-1-jobs\n    members: *dev_team_1_job_hosts\n    \n  - &dev_team_1_folder_host\n    - !host\n      id: Dev-Team-1\n      annotations:\n        authn/api-key: true\n        authn-jwt/jenkins1/jenkins_task_noun: Build\n  \n  - !group\n    id: dev-team-1-folder\n\n  - !grant\n    role: !group dev-team-1-folder\n    members: *dev_team_1_folder_host\n\n  - &dev_team_2_job_hosts\n    - !host\n      id: Dev-Team-2/Job2\n      annotations:\n        authn/api-key: true\n        authn-jwt/jenkins1/jenkins_task_noun: Build\n        authn-jwt/jenkins1/jenkins_parent_full_name: Dev-Team-2\n\n  - !group\n    id: dev-team-2-jobs\n\n  - !grant\n    role: !group dev-team-2-jobs\n    members: *dev_team_2_job_hosts\n    \n  - &dev_team_2_folder_host\n    - !host\n      id: Dev-Team-2\n      annotations:\n        authn/api-key: true\n        authn-jwt/jenkins1/jenkins_task_noun: Build\n  \n  - !group\n    id: dev-team-2-folder\n\n  - !grant\n    role: !group dev-team-2-folder\n    members: *dev_team_2_folder_host"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "2-jenkins-grants-authenticator",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into conjur/authn-jwt/jenkins1 branch\n- !grant\n  role: !group consumers\n  members: \n    - !group /data/ci/jenkins/projects/dev-team-1-jobs\n    - !group /data/ci/jenkins/projects/dev-team-1-folder\n    - !group /data/ci/jenkins/projects/dev-team-2-jobs\n    - !group /data/ci/jenkins/projects/dev-team-2-folder"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/conjur/authn-jwt/jenkins1",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"conjur",
+																"authn-jwt",
+																"jenkins1"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "3-jenkins-grants-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into data branch\n- !grant\n  role: !group vault/{{conjurCloudTestSafeName}}/delegation/consumers\n  members:\n    - !group ci/jenkins/projects/dev-team-1-folder\n    - !group ci/jenkins/projects/dev-team-1-jobs\n    - !group ci/jenkins/projects/dev-team-2-jobs"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												}
+											]
+										}
+									]
+								},
+								{
+									"name": "4. cloud",
+									"item": [
+										{
+											"name": "1. aws",
+											"item": [
+												{
+													"name": "1-aws-dev-team-1-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load in data branch\n---\n- !policy\n  id: cloud/azure/dev-team-1/applications\n  body:\n  - &dev_team_1_vm_apps\n    - !host\n      id: vm-app1\n      annotations:\n        authn/api-key: true\n        azure: VM\n        authn-azure/subscription-id: <subscription-id>\n        authn-azure/resource-group: <resource-group>\n\n    \n  - !group\n    id: vm-apps\n\n  - !grant\n    role: !group vm-apps\n    members: *dev_team_1_vm_apps\n\n  - &dev_team_1_app_services_apps\n    - !host\n      id: app-services-app1\n      annotations:\n        authn/api-key: true\n        azure: \"app services\"\n        authn-azure/subscription-id: <subscription-id>\n        authn-azure/resource-group: <resource-group>\n\n    \n  - !group\n    id: app-services-apps\n\n  - !grant\n    role: !group app-services-apps\n    members: *dev_team_1_app_services_apps\n\n  - &dev_team_1_function_apps\n    - !host\n      id: function-app1\n      annotations:\n        authn/api-key: true\n        azure: function\n        authn-azure/subscription-id: <subscription-id>\n        authn-azure/resource-group: <resource-group>\n    \n  - !group\n    id: function-apps\n\n  - !grant\n    role: !group function-apps\n    members: *dev_team_1_function_apps\n\n  - &dev_team_1_container_apps\n    - !host\n      id: container-app1\n      annotations:\n        authn/api-key: true\n        azure: container\n        authn-azure/subscription-id: <subscription-id>\n        authn-azure/resource-group: <resource-group>\n    \n  - !group\n    id: container-apps\n\n  - !grant\n    role: !group container-apps\n    members: *dev_team_1_container_apps"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "2-aws-dev-team-2-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load in data branch\n---\n- !policy\n  id: cloud/aws/dev-team-2/applications\n  annotations:\n    aws: true\n  body:\n  # The host's name has to follow the format: \"AccountID\"/\"IAMRoleName\"\n  - &dev_team_2_lambda_apps\n    - !host\n      id: 735280068473/ConjurAWSRole\n      annotations:\n        authn/api-key: true\n        aws: lambda\n    \n  - !group\n    id: lambda-apps\n\n  - !grant\n    role: !group lambda-apps\n    members: *dev_team_2_lambda_apps"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "3-aws-grants-authenticator",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into conjur/authn-iam/region1 branch\n- !grant\n  roles:\n    - !group consumers\n  members:\n    - !group /data/cloud/aws/dev-team-1/applications/ec2-apps\n    - !group /data/cloud/aws/dev-team-2/applications/lambda-apps"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/conjur/authn-iam/region1",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"conjur",
+																"authn-iam",
+																"region1"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "4-aws-grants-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load in data branch\n- !grant\n  roles:\n    - !group vault/{{conjurCloudTestSafeName}}/delegation/consumers\n  members:\n    - !group cloud/aws/dev-team-1/applications/ec2-apps\n    - !group cloud/aws/dev-team-2/applications/lambda-apps"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												}
+											]
+										},
+										{
+											"name": "2. azure",
+											"item": [
+												{
+													"name": "1-azure-dev-team-1-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into data branch\n\n---\n- !policy\n  id: cloud/azure/dev-team-1/applications\n  body:\n  - &dev_team_1_vm_apps\n    - !host\n      id: vm-app1\n      annotations:\n        authn/api-key: true\n        azure: VM\n        authn-azure/subscription-id: <subscription-id>\n        authn-azure/resource-group: <resource-group>\n    \n  - !group\n    id: vm-apps\n\n  - !grant\n    role: !group vm-apps\n    members: *dev_team_1_vm_apps\n\n  - &dev_team_1_app_services_apps\n    - !host\n      id: app-services-app1\n      annotations:\n        authn/api-key: true\n        azure: \"app services\"\n        authn-azure/subscription-id: <subscription-id>\n        authn-azure/resource-group: <resource-group>\n    \n  - !group\n    id: app-services-apps\n\n  - !grant\n    role: !group app-services-apps\n    members: *dev_team_1_app_services_apps\n\n  - &dev_team_1_function_apps\n    - !host\n      id: function-app1\n      annotations:\n        authn/api-key: true\n        azure: function\n        authn-azure/subscription-id: <subscription-id>\n        authn-azure/resource-group: <resource-group>\n    \n  - !group\n    id: function-apps\n\n  - !grant\n    role: !group function-apps\n    members: *dev_team_1_function_apps\n\n  - &dev_team_1_container_apps\n    - !host\n      id: container-app1\n      annotations:\n        authn/api-key: true\n        azure: container\n        authn-azure/subscription-id: <subscription-id>\n        authn-azure/resource-group: <resource-group>\n    \n  - !group\n    id: container-apps\n\n  - !grant\n    role: !group container-apps\n    members: *dev_team_1_container_apps"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "2-azure-dev-team-2-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into data branch\n\n---\n- !policy\n  id: cloud/azure/dev-team-2/applications\n  body:\n  - &dev_team_2_vm_apps\n    - !host\n      id: vm-app1\n      annotations:\n        authn/api-key: true\n        azure: VM\n        authn-azure/subscription-id: <subscription-id>\n        authn-azure/resource-group: <resource-group>\n    \n  - !group\n    id: vm-apps\n\n  - !grant\n    role: !group vm-apps\n    members: *dev_team_2_vm_apps\n\n  - &dev_team_2_app_services_apps\n    - !host\n      id: app-services-app1\n      annotations:\n        authn/api-key: true\n        azure: \"app services\"\n        authn-azure/subscription-id: <subscription-id>\n        authn-azure/resource-group: <resource-group>\n    \n  - !group\n    id: app-services-apps\n\n  - !grant\n    role: !group app-services-apps\n    members: *dev_team_2_app_services_apps\n\n  - &dev_team_1_function_apps\n    - !host\n      id: function-app1\n      annotations:\n        authn/api-key: true\n        azure: function\n        authn-azure/subscription-id: <subscription-id>\n        authn-azure/resource-group: <resource-group>\n    \n  - !group\n    id: function-apps\n\n  - !grant\n    role: !group function-apps\n    members: *dev_team_2_function_apps\n\n  - &dev_team_2_container_apps\n    - !host\n      id: container-app1\n      annotations:\n        authn/api-key: true\n        azure: container\n        authn-azure/subscription-id: <subscription-id>\n        authn-azure/resource-group: <resource-group>\n\n  - !group\n    id: container-apps\n\n  - !grant\n    role: !group container-apps\n    members: *dev_team_2_container_apps"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "3-azure-grants-authenticator",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into conjur/authn-azure/region1 branch\n- !grant\n  roles:\n    - !group consumers\n  members:\n    - !group /data/cloud/azure/dev-team-1/applications/vm-apps\n    - !group /data/cloud/azure/dev-team-1/applications/app-services-apps\n    - !group /data/cloud/azure/dev-team-1/applications/function-apps\n    - !group /data/cloud/azure/dev-team-1/applications/container-apps\n    - !group /data/cloud/azure/dev-team-2/applications/vm-apps\n    - !group /data/cloud/azure/dev-team-2/applications/app-services-apps\n    - !group /data/cloud/azure/dev-team-2/applications/function-apps\n    - !group /data/cloud/azure/dev-team-2/applications/container-apps"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/conjur/authn-azure/region1",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"conjur",
+																"authn-azure",
+																"region1"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "4-azure-grants-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into data branch\n- !grant\n  roles:\n    - !group vault/{{conjurCloudTestSafeName}}/delegation/consumers\n  members:\n    - !group cloud/azure/dev-team-1/applications/vm-apps\n    - !group cloud/azure/dev-team-1/applications/app-services-apps\n    - !group cloud/azure/dev-team-1/applications/function-apps\n    - !group cloud/azure/dev-team-1/applications/container-apps\n    - !group cloud/azure/dev-team-2/applications/vm-apps\n    - !group cloud/azure/dev-team-2/applications/app-services-apps\n    - !group cloud/azure/dev-team-2/applications/function-apps\n    - !group cloud/azure/dev-team-2/applications/container-apps"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												}
+											]
+										},
+										{
+											"name": "3. gcp",
+											"item": [
+												{
+													"name": "1-gcp-dev-team-1-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# The hosts in the policy need to have this format:\n# - !host\n#   id: <host-id>\n#   annotations:\n#     authn/api-key: false\n#     authn-gcp/instance-name: <instance-name>\n#     authn-gcp/project-id: <project-id>\n#     authn-gcp/service-account-id: <service-account-id>\n#     authn-gcp/service-account-email: <service-account-email>\n---\n- !policy\n  id: cloud/gcp/dev-team-1/applications\n  body:\n  - &dev_team_1_compute_apps\n    - !host\n      id: compute-app1\n      annotations:\n        authn/api-key: true\n        authn-gcp/instance-name: <instance-name>\n        authn-gcp/project-id: <project-id>\n        authn-gcp/service-account-id: <service-account-id>\n        authn-gcp/service-account-email: <service-account-email>\n        gcp: compute\n    \n  - !group\n    id: compute-apps\n\n  - !grant\n    role: !group compute-apps\n    members: *dev_team_1_compute_apps\n\n  - &dev_team_1_cloud_function_apps\n    - !host\n      id: cloud-function-app1\n      annotations:\n        authn/api-key: true\n        authn-gcp/instance-name: <instance-name>\n        authn-gcp/project-id: <project-id>\n        authn-gcp/service-account-id: <service-account-id>\n        authn-gcp/service-account-email: <service-account-email>\n        gcp: cloud-function\n    \n  - !group\n    id: cloud-function-apps\n\n  - !grant\n    role: !group cloud-function-apps\n    members: *dev_team_1_cloud_function_apps\n"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "2-gcp-dev-team-2-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# The hosts in the policy need to have this format:\n# - !host\n#   id: <host-id>\n#   annotations:\n#     authn-gcp/instance-name: <instance-name>\n#     authn-gcp/project-id: <project-id>\n#     authn-gcp/service-account-id: <service-account-id>\n#     authn-gcp/service-account-email: <service-account-email>\n---\n- !policy\n  id: cloud/gcp/dev-team-2/applications\n  body:\n  - &dev_team_1_compute_apps\n    - !host\n      id: compute-app1\n      annotations:\n        authn/api-key: true\n        authn-gcp/instance-name: <instance-name>\n        authn-gcp/project-id: <project-id>\n        authn-gcp/service-account-id: <service-account-id>\n        authn-gcp/service-account-email: <service-account-email>\n        gcp: compute\n    \n  - !group\n    id: compute-apps\n\n  - !grant\n    role: !group compute-apps\n    members: *dev_team_1_compute_apps\n\n  - &dev_team_1_cloud_function_apps\n    - !host\n      id: cloud-function-app1\n      annotations:\n        authn/api-key: true\n        authn-gcp/instance-name: <instance-name>\n        authn-gcp/project-id: <project-id>\n        authn-gcp/service-account-id: <service-account-id>\n        authn-gcp/service-account-email: <service-account-email>\n        gcp: cloud-function\n    \n  - !group\n    id: cloud-function-apps\n\n  - !grant\n    role: !group cloud-function-apps\n    members: *dev_team_1_cloud_function_apps"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "3-gcp-grants-authenticator",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into conjur/authn-gcp/region1 branch\n- !grant\n  roles:\n    - !group consumers\n  members:\n    - !group /data/cloud/gcp/dev-team-1/applications/compute-apps\n    - !group /data/cloud/gcp/dev-team-1/applications/cloud-function-apps\n    - !group /data/cloud/gcp/dev-team-2/applications/compute-apps\n    - !group /data/cloud/gcp/dev-team-2/applications/cloud-function-apps"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/conjur/authn-gcp/region1",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"conjur",
+																"authn-gcp",
+																"region1"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												},
+												{
+													"name": "4-gcp-grants-apps",
+													"request": {
+														"auth": {
+															"type": "noauth"
+														},
+														"method": "POST",
+														"header": [
+															{
+																"key": "Authorization",
+																"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+																"type": "text"
+															}
+														],
+														"body": {
+															"mode": "raw",
+															"raw": "# Load into data branch\n- !grant\n  roles:\n    - !group vault/{{conjurCloudTestSafeName}}/delegation/consumers\n  members:\n    - !group cloud/gcp/dev-team-1/applications/compute-apps\n    - !group cloud/gcp/dev-team-1/applications/cloud-function-apps\n    - !group cloud/gcp/dev-team-2/applications/compute-apps\n    - !group cloud/gcp/dev-team-2/applications/cloud-function-apps"
+														},
+														"url": {
+															"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+															"host": [
+																"{{conjurCloudAPIURL}}"
+															],
+															"path": [
+																"policies",
+																"{{conjurCloudAccount}}",
+																"policy",
+																"{{conjurCloudPolicyToExtend}}"
+															]
+														},
+														"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+													},
+													"response": []
+												}
+											]
+										}
+									]
+								},
+								{
+									"name": "5. Scripts",
+									"item": [
+										{
+											"name": "1-bash-apps",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "# Load into data branch\n---\n- !policy\n  id: scripts\n  body: \n  - &staticScripts\n    - !host\n      id: bashApp1\n      annotations:\n        authn/api-key: true\n  \n  - !group static-apps\n\n  - !grant\n    role: !group static-apps\n    members: *staticScripts"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"policies",
+														"{{conjurCloudAccount}}",
+														"policy",
+														"{{conjurCloudPolicyToExtend}}"
+													]
+												},
+												"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+											},
+											"response": []
+										},
+										{
+											"name": "2-bash-grants-apps",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "# Load into the data branch\n- !grant\n  role: !group vault/{{conjurCloudTestSafeName}}/delegation/consumers\n  members:\n    - !group scripts/static-apps"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"policies",
+														"{{conjurCloudAccount}}",
+														"policy",
+														"{{conjurCloudPolicyToExtend}}"
+													]
+												},
+												"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+											},
+											"response": []
+										}
+									]
+								}
+							]
+						}
+					],
+					"description": "This folder contains sample policy files. They can be used to test different integrations.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "2. Populate Policy Values",
+					"item": [
+						{
+							"name": "1. Kubernetes",
+							"item": [
+								{
+									"name": "1. authn-jwt/k8s-cluster1",
+									"item": [
+										{
+											"name": "JWKS Uri",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "https://192.168.65.4:6443/openid/v1/jwks"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/k8s-cluster1/jwks-uri",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"k8s-cluster1",
+														"jwks-uri"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "JWKS Uri Ca Cert",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "-----BEGIN CERTIFICATE-----\nMIICyDCCAbCgAwIBAgIBADANBgkqhkiG9w0BAQsFADAVMRMwEQYDVQQDEwprdWJl\ncm5ldGVzMB4XDTE5MDMxODE5NTE0NloXDTI5MDMxNTE5NTE0NlowFTETMBEGA1UE\nAxMKa3ViZXJuZXRlczCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAPSr\ni+aUjWdfe7I+snYG2CXEgvP8DVVbLtJn/MzWiIiuqqT14ozkrL7u+a/jLw0GLv4e\nbPXUdVy6Ob80DEuTJZ9Jb+MOPSP7Xsce9nPMwUPN17ucH+m4BLYC/60PuZkrQF95\neLQ38qoQIgnViYYnpyNLI5lY23aNLsqHK6Hk/DgzrfQTaBeIqpsvu0/QKew2Tjq2\n7gRhd8ZRRmwquO/MNyOBxkQ/B0iBq20ZwOoG/3UMw3gynJEcMwGlFcmXETxxxtnj\nlJIGNg3c0L1Lk4CRCRDoi00zE27heHdNXS0nhXSvOnNSM3Pjcr92kLg7NArBv1Oo\ncLDoAeFvt9Hmoc0nwEUCAwEAAaMjMCEwDgYDVR0PAQH/BAQDAgKkMA8GA1UdEwEB\n/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAMEsF+w2wmLGl9EQ0ohtVBMQivmo\nHWsmchSRGoIo9U3Ns+z40Lm7u0qD9mKi3hFS7s73NioRF3XWKZZ2g0BxhUfiX7oe\nKlEN+p8WL2ld4ELHzI+xd5TfYJadn4QYrY0joE65X74TCuCe9quoFtDK7sENn6+R\njkh821YJJH3qy56rwmxmXcmwdtStFoFiF93RLLpBTfKvLiTnIF3Yj5Kf9qcRBd9Z\nKMWaLCavB2OWoE31SfGGetgi5grJxoUcRxVGZX4F/nyIjNEvly/nfg1X0igfn0fz\nB8U+sRYaJN6sD/lFV68qgbXH+BaV/Y+hyrTLLtoPoCXzO16vavVsJSHhvVk=\n-----END CERTIFICATE-----"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/k8s-cluster1/ca-cert",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"k8s-cluster1",
+														"ca-cert"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Public Keys",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"type\": \"jwks\",\n    \"value\": {\n        \"keys\": [\n            {\n                \"use\": \"sig\",\n                \"kty\": \"RSA\",\n                \"kid\": \"N3zpI8APgPQzOBbwobZYTM5zatsgOjMw_FFZesp8QQI\",\n                \"alg\": \"RS256\",\n                \"n\": \"2FjpNLQUmceQdixAZ6_Kp9EYq5xXQFxklUeIFv0LqL8qqfbtRtpiHBfSXTWpnSxP6nlkKO8by4X9rWo0vuUVk7ihW-u1V3h-gvwuUBfj3y6TrsZGyM6TA-kTpwgf7WPMr14QCiTOLO0T-1DgfSrRx6q_boV1n80h8UdEuwcSSLU9DmxGltlJsdE2EnNm6Mv1CwPtIhg4gRxMK1-ElyYY5M8wq4TcHgpPIZZeY2wrX-8BiI_gQ8DwhXQXStiKH0jPdbhr2oieWNRVDyq1e-lG_1RoeXLT9zHSfVklX0aP9dEEuK28NkPBqVFVW-AqOUaSozeKPKsfNdV4inA_PC0xdw\",\n                \"e\": \"AQAB\"\n            }\n        ]\n    }\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/k8s-cluster1/public-keys",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"k8s-cluster1",
+														"public-keys"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Token App Property",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "sub"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/k8s-cluster1/token-app-property",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"k8s-cluster1",
+														"token-app-property"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Identity Path",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "/data/cd/kubernetes/dev-team-3/applications"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/k8s-cluster1/identity-path",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"k8s-cluster1",
+														"identity-path"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Issuer",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "https://kubernetes.default.svc.cluster.local"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/k8s-cluster1/issuer",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"k8s-cluster1",
+														"issuer"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Audience",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "conjur"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/k8s-cluster1/audience",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"k8s-cluster1",
+														"audience"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Enforced Claims",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "claim_root/claim_name,custom_claim1,custom_claim2"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/k8s-cluster1/enforced-claims",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"k8s-cluster1",
+														"enforced-claims"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Claim Aliases",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "target-annotation-name_1:source-claim-name_1,target-annotation-name_2:source-claim-name_2"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/k8s-cluster1/claim-aliases",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"k8s-cluster1",
+														"claim-aliases"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Delete Public Keys Variable",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "PATCH",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "- !delete\n  record: !variable authn-jwt/k8s-cluster1/public-keys"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/conjur",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"policies",
+														"{{conjurCloudAccount}}",
+														"policy",
+														"conjur"
+													]
+												},
+												"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+											},
+											"response": []
+										},
+										{
+											"name": "Delete JWKS URI and CA Certs Variables",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "PATCH",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "- !delete\n  record: !variable authn-jwt/k8s-cluster/jwks-uri\n\n- !delete\n  record: !variable authn-jwt/k8s-cluster1/ca-certs"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/conjur",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"policies",
+														"{{conjurCloudAccount}}",
+														"policy",
+														"conjur"
+													]
+												},
+												"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+											},
+											"response": []
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "2. Jenkins",
+							"item": [
+								{
+									"name": "1. authn-jwt/jenkins1",
+									"item": [
+										{
+											"name": "JWKS Uri",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "https://jenkins.internal/jwtauth/conjur-jwk-set"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/jenkins1/jwks-uri",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"jenkins1",
+														"jwks-uri"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "JWKS Uri Ca Cert",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "-----BEGIN CERTIFICATE-----\nMIICyDCCAbCgAwIBAgIBADANBgkqhkiG9w0BAQsFADAVMRMwEQYDVQQDEwprdWJl\ncm5ldGVzMB4XDTE5MDMxODE5NTE0NloXDTI5MDMxNTE5NTE0NlowFTETMBEGA1UE\nAxMKa3ViZXJuZXRlczCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAPSr\ni+aUjWdfe7I+snYG2CXEgvP8DVVbLtJn/MzWiIiuqqT14ozkrL7u+a/jLw0GLv4e\nbPXUdVy6Ob80DEuTJZ9Jb+MOPSP7Xsce9nPMwUPN17ucH+m4BLYC/60PuZkrQF95\neLQ38qoQIgnViYYnpyNLI5lY23aNLsqHK6Hk/DgzrfQTaBeIqpsvu0/QKew2Tjq2\n7gRhd8ZRRmwquO/MNyOBxkQ/B0iBq20ZwOoG/3UMw3gynJEcMwGlFcmXETxxxtnj\nlJIGNg3c0L1Lk4CRCRDoi00zE27heHdNXS0nhXSvOnNSM3Pjcr92kLg7NArBv1Oo\ncLDoAeFvt9Hmoc0nwEUCAwEAAaMjMCEwDgYDVR0PAQH/BAQDAgKkMA8GA1UdEwEB\n/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAMEsF+w2wmLGl9EQ0ohtVBMQivmo\nHWsmchSRGoIo9U3Ns+z40Lm7u0qD9mKi3hFS7s73NioRF3XWKZZ2g0BxhUfiX7oe\nKlEN+p8WL2ld4ELHzI+xd5TfYJadn4QYrY0joE65X74TCuCe9quoFtDK7sENn6+R\njkh821YJJH3qy56rwmxmXcmwdtStFoFiF93RLLpBTfKvLiTnIF3Yj5Kf9qcRBd9Z\nKMWaLCavB2OWoE31SfGGetgi5grJxoUcRxVGZX4F/nyIjNEvly/nfg1X0igfn0fz\nB8U+sRYaJN6sD/lFV68qgbXH+BaV/Y+hyrTLLtoPoCXzO16vavVsJSHhvVk=\n-----END CERTIFICATE-----"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/jenkins1/ca-cert",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"jenkins1",
+														"ca-cert"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Public Keys",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"type\": \"jwks\",\n    \"value\": {\n        \"keys\": [\n            {\n                \"kty\": \"RSA\",\n                \"e\": \"AQAB\",\n                \"use\": \"sig\",\n                \"kid\": \"0617140643\",\n                \"key_ops\": [\n                    \"verify\"\n                ],\n                \"alg\": \"RS256\",\n                \"n\": \"AMv2DSyYDpg-Xva-pjcN4t9_n1Mn8Kqey3KVRLyry9-VAlycDSaOtZRVHioprNKSBieubTRW75ov-oGzdwQZmu2-8upjshj-He6zJj1pL81G0IGhw0D72cNY9yUT2KScLzOQaWa_YvRc8UjOqgse6zrbANXjYkO9w7CILUrDlebu7abeAWIIalbncna_t-zlgYp39C-qZPOWELO-vAKsDCZOGT_DdTil2OnYrsQDGnNw-vmgrVUYDkIZlAALRSJBx8iEW0BV2KpNgEtxsE1VAuvodRhBJfbUmm_BatbnRfIWq6RcP3Nb4US2DAN1NF3_kLbFuZKQRJnHZB2yZGT_sn8\"\n            }\n        ]\n    }\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/jenkins1/public-keys",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"jenkins1",
+														"public-keys"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Token App Property",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "jenkins_full_name"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/jenkins1/token-app-property",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"jenkins1",
+														"token-app-property"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Identity Path",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "/data/ci/jenkins/projects"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/jenkins1/identity-path",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"jenkins1",
+														"identity-path"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Issuer",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "https://jenkins.internal"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/jenkins1/issuer",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"jenkins1",
+														"issuer"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Audience",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "https://conjur.internal"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/jenkins1/audience",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"jenkins1",
+														"audience"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Enforced Claims",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "claim_root/claim_name,custom_claim1,custom_claim2"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/jenkins1/enforced-claims",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"jenkins1",
+														"enforced-claims"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Claim Aliases",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "target-annotation-name_1:source-claim-name_1,target-annotation-name_2:source-claim-name_2"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/jenkins1/claim-aliases",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"jenkins1",
+														"claim-aliases"
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "3. Gitlab",
+							"item": [
+								{
+									"name": "1. authn-jwt/gitlab1",
+									"item": [
+										{
+											"name": "JWKS Uri",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "https://gitlab.internal/-/jwks/"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/gitlab1/jwks-uri",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"gitlab1",
+														"jwks-uri"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "JWKS Uri Ca Cert",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "-----BEGIN CERTIFICATE-----\nMIICyDCCAbCgAwIBAgIBADANBgkqhkiG9w0BAQsFADAVMRMwEQYDVQQDEwprdWJl\ncm5ldGVzMB4XDTE5MDMxODE5NTE0NloXDTI5MDMxNTE5NTE0NlowFTETMBEGA1UE\nAxMKa3ViZXJuZXRlczCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAPSr\ni+aUjWdfe7I+snYG2CXEgvP8DVVbLtJn/MzWiIiuqqT14ozkrL7u+a/jLw0GLv4e\nbPXUdVy6Ob80DEuTJZ9Jb+MOPSP7Xsce9nPMwUPN17ucH+m4BLYC/60PuZkrQF95\neLQ38qoQIgnViYYnpyNLI5lY23aNLsqHK6Hk/DgzrfQTaBeIqpsvu0/QKew2Tjq2\n7gRhd8ZRRmwquO/MNyOBxkQ/B0iBq20ZwOoG/3UMw3gynJEcMwGlFcmXETxxxtnj\nlJIGNg3c0L1Lk4CRCRDoi00zE27heHdNXS0nhXSvOnNSM3Pjcr92kLg7NArBv1Oo\ncLDoAeFvt9Hmoc0nwEUCAwEAAaMjMCEwDgYDVR0PAQH/BAQDAgKkMA8GA1UdEwEB\n/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAMEsF+w2wmLGl9EQ0ohtVBMQivmo\nHWsmchSRGoIo9U3Ns+z40Lm7u0qD9mKi3hFS7s73NioRF3XWKZZ2g0BxhUfiX7oe\nKlEN+p8WL2ld4ELHzI+xd5TfYJadn4QYrY0joE65X74TCuCe9quoFtDK7sENn6+R\njkh821YJJH3qy56rwmxmXcmwdtStFoFiF93RLLpBTfKvLiTnIF3Yj5Kf9qcRBd9Z\nKMWaLCavB2OWoE31SfGGetgi5grJxoUcRxVGZX4F/nyIjNEvly/nfg1X0igfn0fz\nB8U+sRYaJN6sD/lFV68qgbXH+BaV/Y+hyrTLLtoPoCXzO16vavVsJSHhvVk=\n-----END CERTIFICATE-----"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/gitlab1/ca-cert",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"gitlab1",
+														"ca-cert"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Public Keys",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"type\": \"jwks\",\n    \"value\": {\n        \"keys\": [\n            {\n                \"use\": \"sig\",\n                \"kty\": \"RSA\",\n                \"kid\": \"jzWTyPPXylUcRphTd5O07_OupM0PozzrAbUjrLOjkUk\",\n                \"alg\": \"RS256\",\n                \"n\": \"ukXcxB_g-Q1QfgjAtDeMFOR86i8jyuD1Y1VFbfRhiSq5oEhJfWDTJdpLIK0twPo-lCXNHDgoPe55skPRyJJ_Xt81n2Am6RwKqBDxTuJOO8CYdfKisRlgSv0QjJHfrDQXlbo076UJ16lVMsk4-PuNXX-mbWXnW3p4BPaSXXxWPsMVGUU1KL2LKUyHhJbK0XRApxT0L8kZS-7bVPdmw-a8kVL_YwJac7zA4GK2cMp_3d7-fpfQLSB0cX3G0Z7eVxEPqgakXyAy5jLjmD7Xu0aKQU8uCwJXPW2tSTwEMgE2zJ64eCu3OioWDklDK3dK1B2owLjPOG1Dp2knuLozKyGIxQ\",\n                \"e\": \"AQAB\"\n            }\n        ]\n    }\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/gitlab1/public-keys",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"gitlab1",
+														"public-keys"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Token App Property",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "project_path"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/gitlab1/token-app-property",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"gitlab1",
+														"token-app-property"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Identity Path",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "/ci/gitlab/projects"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/gitlab1/identity-path",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"gitlab1",
+														"identity-path"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Issuer",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "https://gitlab.internal"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/gitlab1/issuer",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"gitlab1",
+														"issuer"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Audience",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "https://conjur.internal"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/gitlab1/audience",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"gitlab1",
+														"audience"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Enforced Claims",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "claim_root/claim_name,custom_claim1,custom_claim2"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/gitlab1/enforced-claims",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"gitlab1",
+														"enforced-claims"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Load Claim Aliases",
+											"request": {
+												"auth": {
+													"type": "noauth"
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Authorization",
+														"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "target-annotation-name_1:source-claim-name_1,target-annotation-name_2:source-claim-name_2"
+												},
+												"url": {
+													"raw": "{{conjurCloudAPIURL}}/secrets/{{conjurCloudAccount}}/variable/conjur/authn-jwt/gitlab1/claim-aliases",
+													"host": [
+														"{{conjurCloudAPIURL}}"
+													],
+													"path": [
+														"secrets",
+														"{{conjurCloudAccount}}",
+														"variable",
+														"conjur",
+														"authn-jwt",
+														"gitlab1",
+														"claim-aliases"
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "3. CRUD",
+					"item": [
+						{
+							"name": "Create Objects",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "- !host\n  id: newHost\n  annotations:\n    description: \"This is a new host.\"\n    authn/api-key: true\n  restricted_to: 192.168.19.34\n\n- !group\n  id: newGroup\n  annotations:\n    description: \"This is a new group.\"\n\n- !policy\n  id: newPolicy\n  annotations:\n    description : \"Container for other objects.\"\n  body:\n    - !variable newPolicyVariable\n\n- !layer\n  id: newLayer\n  annotations:\n    description: \"This is a new layer.\"\n\n- !variable\n  id: newVariable\n  kind: password\n  annotations:\n    mime_type: application/octet-stream\n    custom_key: \"custom_value\""
+								},
+								"url": {
+									"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+									"host": [
+										"{{conjurCloudAPIURL}}"
+									],
+									"path": [
+										"policies",
+										"{{conjurCloudAccount}}",
+										"policy",
+										"{{conjurCloudPolicyToExtend}}"
+									]
+								},
+								"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Objects",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "- !delete\n  record: !host newHost\n\n- !delete\n  record: !group newGroup\n\n- !delete\n  record: !layer newLayer\n\n- !delete\n  record: !policy newPolicy\n\n- !delete\n  record: !variable newVariable"
+								},
+								"url": {
+									"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+									"host": [
+										"{{conjurCloudAPIURL}}"
+									],
+									"path": [
+										"policies",
+										"{{conjurCloudAccount}}",
+										"policy",
+										"{{conjurCloudPolicyToExtend}}"
+									]
+								},
+								"description": "Adds data to the existing Conjur policy. Deletions are not allowed. Any policy objects that exist on the server but are omitted from the policy file will not be deleted and any explicit deletions in the policy file will result in an error."
+							},
+							"response": []
+						},
+						{
+							"name": "Replace Policy",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									},
+									"disabled": false
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+										"key": "Authorization",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/newPolicy",
+									"host": [
+										"{{conjurCloudAPIURL}}"
+									],
+									"path": [
+										"policies",
+										"{{conjurCloudAccount}}",
+										"policy",
+										"newPolicy"
+									]
+								},
+								"description": "Loads or replaces a Conjur policy document.\n\nAny policy data which already exists on the server but is **not** explicitly specified in the new policy file **will be deleted**."
+							},
+							"response": []
+						},
+						{
+							"name": "Assign Privileges",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "- !permit\n  role: !host newHost\n  privileges: [\"read\",\"execute\",\"update\"]\n  resources:\n    - !variable newVariable\n\n- !permit\n  role: !group newGroup\n  privileges: [\"read\",\"update\",\"create\"]\n  resources:\n    - !policy newPolicy"
+								},
+								"url": {
+									"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+									"host": [
+										"{{conjurCloudAPIURL}}"
+									],
+									"path": [
+										"policies",
+										"{{conjurCloudAccount}}",
+										"policy",
+										"{{conjurCloudPolicyToExtend}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Grant Role Membership",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Token token=\"{{conjurCloudAccessToken}}\"",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "- !grant\n  role: !group newGroup\n  members:\n    - !user newUser"
+								},
+								"url": {
+									"raw": "{{conjurCloudAPIURL}}/policies/{{conjurCloudAccount}}/policy/{{conjurCloudPolicyToExtend}}",
+									"host": [
+										"{{conjurCloudAPIURL}}"
+									],
+									"path": [
+										"policies",
+										"{{conjurCloudAccount}}",
+										"policy",
+										"{{conjurCloudPolicyToExtend}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "4. Identity Authentication",
+			"item": [
+				{
+					"name": "Authenticate user",
+					"item": [
+						{
+							"name": "MFA",
+							"item": [
+								{
+									"name": "Send email with code",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-IDAP-NATIVE-CLIENT",
+												"value": "true",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"SessionId\": \"{{identitySessionID}}\",\n    \"MechanismId\": \"{{identityMechanismID2}}\",\n    \"Action\": \"StartOOB\"\n}"
+										},
+										"url": {
+											"raw": "{{identityTenantURL}}/Security/AdvanceAuthentication",
+											"host": [
+												"{{identityTenantURL}}"
+											],
+											"path": [
+												"Security",
+												"AdvanceAuthentication"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Enter code from email",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"const jsonData = pm.response.json().Result",
+													"",
+													"pm.test(\"Identity Token Exists\", function() {",
+													"    if (jsonData.Token) {",
+													"        pm.environment.set(\"identityToken\", jsonData.Token);",
+													"    }",
+													"    else{",
+													"        throw new Error(\"You already have a token. Next step: Authenticate user\")",
+													"    }",
+													"});",
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-IDAP-NATIVE-CLIENT",
+												"value": "true",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"SessionId\": \"{{identitySessionID}}\",\n    \"MechanismId\": \"{{identityMechanismID2}}\",\n    \"Action\": \"Answer\",\n    \"Answer\": \"<email code>\"\n}"
+										},
+										"url": {
+											"raw": "{{identityTenantURL}}/Security/AdvanceAuthentication",
+											"host": [
+												"{{identityTenantURL}}"
+											],
+											"path": [
+												"Security",
+												"AdvanceAuthentication"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "1. Start authentication",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const jsonData = pm.response.json().Result",
+											"if (jsonData.Token) {",
+											"    pm.test(\"Identity Token Exists\", function() {",
+											"        if (jsonData.Token) {",
+											"            pm.environment.set(\"identityToken\", jsonData.Token);",
+											"        }",
+											"    });",
+											"}",
+											"else{",
+											"    pm.test(\"Identity Session ID Exists\", function() {",
+											"        if (jsonData.SessionId) {",
+											"            pm.environment.set(\"identitySessionID\", jsonData.SessionId);",
+											"        }",
+											"    });",
+											"",
+											"    pm.test(\"Identity Mechanism ID Exists\", function() {",
+											"        if (jsonData.Challenges[0].Mechanisms[0].MechanismId) {",
+											"            pm.environment.set(\"identityMechanismID\", jsonData.Challenges[0].Mechanisms[0].MechanismId);",
+											"        }",
+											"    });",
+											"}",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"Version\": \"1.0\",\n    \"User\": \"{{identityUsername}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{identityTenantURL}}/Security/StartAuthentication",
+									"host": [
+										"{{identityTenantURL}}"
+									],
+									"path": [
+										"Security",
+										"StartAuthentication"
+									]
+								},
+								"description": "**Environment variables you need for the request:**\n\nIdentityUsername\n\n**Environment variables will update by the response**:\n\nidentitySessionID\n\nidentityMechanismID\n\nidentityToken (only if you have seesionID and mechanismID in your cookies)"
+							},
+							"response": []
+						},
+						{
+							"name": "2 Advance authentication",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const jsonData = pm.response.json().Result",
+											"",
+											"pm.test(\"Identity Token Exists\", function() {",
+											"    if (jsonData.Token) {",
+											"        pm.environment.set(\"identityToken\", jsonData.Token);",
+											"    }",
+											"    else{",
+											"        throw new Error(\"You already have a token. Next step: Authenticate user\")",
+											"    }",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "     {\n      \"Action\": \"Answer\",\n      \"SessionId\": \"{{identitySessionID}}\",\n      \"MechanismId\": \"{{identityMechanismID}}\",\n      \"Answer\": \"{{identityPassword}}\"\n      }",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{identityTenantURL}}/Security/AdvanceAuthentication",
+									"host": [
+										"{{identityTenantURL}}"
+									],
+									"path": [
+										"Security",
+										"AdvanceAuthentication"
+									]
+								},
+								"description": "**Environment variables you need for the request:**\n\nidentitySessionID\n\nidentityMechanismID\n\nIdentityPlatformPassword\n\n**Environment variables will update by the response**:\n\nidentityToken"
+							},
+							"response": []
+						},
+						{
+							"name": "3. Authenticate user",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const Data = pm.response.text()",
+											"pm.test(\"conjurCloudAccessToken Exists for user\", function() {",
+											"    pm.environment.set(\"conjurCloudAccessToken\", Data);",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept-Encoding",
+										"value": "base64",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "id_token",
+											"value": "{{identityToken}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{conjurCloudAPIURL}}/authn-oidc/cyberark/conjur/authenticate",
+									"host": [
+										"{{conjurCloudAPIURL}}"
+									],
+									"path": [
+										"authn-oidc",
+										"cyberark",
+										"conjur",
+										"authenticate"
+									]
+								},
+								"description": "**Environment variables you need for the request:**\n\nidentityToken\n\n**Environment variables will update by the response**:\n\nconjurcloudAccessToken"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Authenticate host",
+					"item": [
+						{
+							"name": "Authenticate host",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const Data = pm.response.text()",
+											"pm.test(\"conjurCloudAccessToken Exists for host\", function() {",
+											"    pm.environment.set(\"conjurCloudAccessToken\", Data);",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Accept-Encoding",
+										"value": "base64",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{{conjurCloudHostAPIKey}}"
+								},
+								"url": {
+									"raw": "{{conjurCloudAPIURL}}/authn/conjur/{{conjurCloudHostName}}/authenticate",
+									"host": [
+										"{{conjurCloudAPIURL}}"
+									],
+									"path": [
+										"authn",
+										"conjur",
+										"{{conjurCloudHostName}}",
+										"authenticate"
+									]
+								},
+								"description": "**Environment variables you need for the request:**\n\nconjurcloudHostAPIKey (copy it from the policy who create the host)\n\nconjurcloudHostName\n\n**Environment variables will update by the response**:\n\nconjurcloudAccessToken"
+							},
+							"response": []
+						},
+						{
+							"name": "Authenticate host - Edge",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const Data = pm.response.text()",
+											"pm.test(\"conjurCloudAccessToken Exists for host\", function() {",
+											"    pm.environment.set(\"conjurCloudAccessToken\", Data);",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Accept-Encoding",
+										"value": "base64",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{{conjurCloudHostAPIKey}}"
+								},
+								"url": {
+									"raw": "{{conjurCloudAPIURL}}/authn/conjur/{{conjurCloudHostName}}/authenticate",
+									"host": [
+										"{{conjurCloudAPIURL}}"
+									],
+									"path": [
+										"authn",
+										"conjur",
+										"{{conjurCloudHostName}}",
+										"authenticate"
+									]
+								},
+								"description": "**Environment variables you need for the request:**\n\nconjurcloudHostAPIKey (copy it from the policy who create the host)\n\nconjurcloudHostName\n\n**Environment variables will update by the response**:\n\nconjurcloudAccessToken"
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"let url = pm.environment.get(\"identityTenantURL\");",
+					"let account = pm.environment.get(\"conjurCloudAccount\");",
+					"let userName = pm.environment.get(\"identityUsername\")",
+					"let password = pm.environment.get(\"identityPassword\")",
+					"",
+					"let login = {",
+					"  url: url + \"/Security/StartAuthentication\",",
+					"  method: 'POST',",
+					"  header: { 'content-type': 'application/json' },",
+					"  body: {",
+					"      mode: 'raw',",
+					"      raw: JSON.stringify({\"Version\": \"1.0\",\"User\": userName})",
+					"  }",
+					"}",
+					"",
+					"pm.sendRequest(login, function (err, res) {",
+					"    var jsonData = res.json();",
+					"    if (jsonData.Result.Token) {",
+					"        pm.test(\"Identity Token Exists\", function() {",
+					"            if (jsonData.Result.Token) {",
+					"                pm.environment.set(\"identityToken\", jsonData.Result.Token);",
+					"            }",
+					"        });",
+					"    }",
+					"    else{",
+					"        pm.test(\"Identity Session ID Exists\", function() {",
+					"            if (jsonData.Result.SessionId) {",
+					"                pm.environment.set(\"identitySessionID\", jsonData.Result.SessionId);",
+					"            }",
+					"        });",
+					"",
+					"        pm.test(\"Identity Mechanism ID Exists\", function() {",
+					"            if (jsonData.Result.Challenges[0].Mechanisms[0].MechanismId) {",
+					"                pm.environment.set(\"identityMechanismID\", jsonData.Result.Challenges[0].Mechanisms[0].MechanismId);",
+					"            }",
+					"        });",
+					"    }",
+					"    }",
+					")",
+					"",
+					"let identityMechanismID = pm.environment.get(\"identityMechanismID\");",
+					"let identitySessionID = pm.environment.get(\"identitySessionID\");",
+					"",
+					"let auth = {",
+					"  url: url + \"/Security/AdvanceAuthentication\",",
+					"  method: 'POST',",
+					"  header: { 'content-type': 'application/json' },",
+					"  body: {",
+					"      mode: 'raw',",
+					"      raw: JSON.stringify(     {",
+					"      \"Action\": \"Answer\",",
+					"      \"SessionId\": identitySessionID,",
+					"      \"MechanismId\": identityMechanismID,\"Answer\": password})",
+					"  }",
+					"}",
+					"pm.sendRequest(auth, function (err, res) {",
+					"    var jsonData = res.json().Result;",
+					"    pm.test(\"Identity Token Exists\", function() {",
+					"    if (jsonData.Token) {",
+					"        pm.environment.set(\"identityToken\", jsonData.Token);",
+					"    }",
+					"    else{",
+					"        throw new Error(\"You already have a token. Next step: Authenticate user\")",
+					"    }",
+					"});",
+					"    }",
+					")",
+					"",
+					"let identityToken = pm.environment.get(\"identityToken\");",
+					"let conjurCloudAPIURL = pm.environment.get(\"conjurCloudAPIURL\");",
+					"",
+					"let conjurauth = {",
+					"    url: conjurCloudAPIURL + \"/authn-oidc/cyberark/conjur/authenticate\",",
+					"    method: 'POST',",
+					"    header: { 'content-type': 'x-www-form-urlencoded', 'Accept-Encoding': 'base64' },",
+					"    body: {",
+					"        mode: 'urlencoded',",
+					"        urlencoded : [",
+					"        { key: 'id_token', value:identityToken}",
+					"        ]",
+					"    }",
+					"}",
+					"",
+					"pm.sendRequest(conjurauth, function (err, res) {",
+					"    pm.environment.set(\"conjurCloudAccessToken\",res.text())",
+					"    }",
+					")",
+					"",
+					"",
+					"",
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
